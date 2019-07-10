@@ -24,8 +24,8 @@ def main():
     with open("cities.json", "r") as read_file:
         city_data = json.load(read_file)
 
-    fac_number = [0, 1, 2, 3, 4]
-    cus_number = [25, 26, 27, 28, 29, 30, 31, 32]
+    fac_number = [0, 1, 2, 3, 5]
+    cus_number = [25, 26, 27, 28, 29, 30, 31, 33]
 
     cached_file_name = 'cached_cost_'+str(fac_number).replace(",", "_")+str(cus_number).replace(",", "_")+'.pickle'
     cost = []
@@ -58,7 +58,7 @@ def main():
             pickle.dump(cost, cost_file)
 
     else:
-        with open(cached_file_name, 'r') as cost_file:
+        with open(cached_file_name, 'rb') as cost_file:
             cost = pickle.load(cost_file)
 
     print(cost)
