@@ -19,19 +19,21 @@ app_code = config['DEFAULT']["app_code"]
 
 
 def main():
-    here_api = "https://tce.api.here.com/2/calculateroute.json?app_id=" + app_id + "&app_code=" + app_code
+    here_api_other = "https://tce.api.here.com/2/calculateroute.json?app_id=" + app_id + "&app_code=" + app_code
+    here_api = "https://fleet.api.here.com/2/calculateroute.json?app_id=" + app_id + "&app_code=" + app_code
 
     with open("cities.json", "r") as read_file:
         city_data = json.load(read_file)
 
     fac_number = [0, 1, 2, 3, 4]
     cus_number = [25, 26, 27, 28, 29, 30, 31, 32]
-    vehicle_cost = 11
+    vehicle_cost = 3.03
     driver_cost = 17
 
     cached_file_name = 'cached_cost_'+str(fac_number).replace(",", "_")+str(cus_number).replace(",", "_") + \
-                       str(vehicle_cost)+str(driver_cost)+'.pickle'
+                       str(vehicle_cost).replace(".", "-")+str(driver_cost).replace(".", "-")+'.pickle'
     cost = []
+    raw_here_data = []
 
     if not os.path.exists(cached_file_name):
         for fac in fac_number:
@@ -40,32 +42,35 @@ def main():
                 print(city_data[fac]['city'], city_data[fac]['latitude'], city_data[fac]['longitude'])
                 print(city_data[cus]['city'], city_data[cus]['latitude'], city_data[cus]['longitude'])
 
-                cost_opt = "&cost_optimize=1"
-
                 request_string = here_api + \
                     "&waypoint0=" + str(city_data[fac]['latitude']) + "," + \
                     str(city_data[fac]['longitude']) + \
                     "&waypoint1=" + str(city_data[cus]['latitude']) + "," + \
                     str(city_data[cus]['longitude']) + \
-                    "&mode=fastest;car" + \
-                    cost_opt + \
-                    "driver_cost=" + str(driver_cost) + \
-                    "vehicle_cost=" + str(vehicle_cost)
+                    "&mode=car" + \
+                    "&currency=USD" + \
+                    "&driver_cost=" + str(driver_cost) + \
+                    "&vehicle_cost=" + str(vehicle_cost)
                 r = requests.get(request_string)
 
                 print(r.status_code)
                 # print(r.text)
                 here_data = r.json()
+                raw_here_data.append(here_data)
                 try:
-                    here_cost = float(here_data['costs']['totalCost'])
+                    print(json.dumps(here_data, indent=4))
+                    here_cost = float(here_data["response"]["route"][0]["cost"]['totalCost'])
                 except:
-                    here_cost = "NA"
+                    here_cost = 10000
                 fact.append(here_cost)
             cost.append(fact)
             print(fact)
 
         with open(cached_file_name, 'wb') as cost_file:
             pickle.dump(cost, cost_file)
+
+        with open("raw_here_data", 'wb') as here_data_file:
+            pickle.dump(raw_here_data, here_data_file)
 
     else:
         with open(cached_file_name, 'rb') as cost_file:
